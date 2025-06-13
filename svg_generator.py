@@ -165,15 +165,16 @@ def create_text_line_elements(text: str, y_position: int, font: ImageFont.FreeTy
     rect_x = 20
     rect_y = y_position - TEXT_PADDING
     
-    # Position text centered in rectangle
+    # Position text properly aligned with rectangle
+    # Use the rectangle's center for vertical alignment
     text_x = rect_x + TEXT_PADDING
-    text_y = y_position + text_height - TEXT_PADDING  # Adjust for baseline
+    text_y = rect_y + (rect_height / 2)  # Center vertically in rectangle
     
     return f'''<g>
     <rect x="{rect_x}" y="{rect_y}" width="{rect_width}" height="{rect_height}" 
           fill="{RECTANGLE_COLOR}" stroke="none"/>
     <text x="{text_x}" y="{text_y}" font-family="Noto Sans CJK JP" font-size="{FONT_SIZE}" 
-          fill="{TEXT_COLOR}">{xml.sax.saxutils.escape(text)}</text>
+          fill="{TEXT_COLOR}" dominant-baseline="central" text-anchor="start">{xml.sax.saxutils.escape(text)}</text>
 </g>'''
 
 
