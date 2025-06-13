@@ -10,6 +10,7 @@ image file as a background for the entire graphic.
 import argparse
 import base64
 import os
+import subprocess
 import sys
 import tempfile
 import xml.sax.saxutils
@@ -80,46 +81,123 @@ def process_pdf_background(pdf_path: str, page_number: int, use_external: bool =
         raise RuntimeError(f"Error processing PDF: {e}")
 
 
-def process_image_background(image_path: str, use_external: bool = False, output_file: str = "output.svg", copy_to_svg_dir: bool = False) -> str:
+def normalize_image_orientation(image_path: str) -> str:
+    """
+    Normalize image orientation using ImageMagick's auto-orient feature.
+    Creates a temporary file with normalized orientation.
+    
+    Args:
+        image_path: Path to the input image
+        
+    Returns:
+        Path to the normalized image (temporary file)
+        
+    Raises:
+        RuntimeError: If ImageMagick is not available or command fails
+    """
+    # Check if ImageMagick is available
+    try:
+        result = subprocess.run(['convert', '-version'], 
+                              capture_output=True, text=True, check=True)
+        print(f"Using ImageMagick: {result.stdout.split()[0:3]}")
+    except (subprocess.CalledProcessError, FileNotFoundError):
+        # Try the newer 'magick' command
+        try:
+            result = subprocess.run(['magick', '-version'], 
+                                  capture_output=True, text=True, check=True)
+            print(f"Using ImageMagick: {result.stdout.split()[0:3]}")
+            convert_cmd = 'magick'
+        except (subprocess.CalledProcessError, FileNotFoundError):
+            raise RuntimeError("ImageMagick not found. Please install ImageMagick to handle EXIF orientation.")
+    else:
+        convert_cmd = 'convert'
+    
+    # Create temporary file for normalized image
+    temp_file = tempfile.NamedTemporaryFile(suffix=Path(image_path).suffix, delete=False)
+    temp_path = temp_file.name
+    temp_file.close()
+    
+    try:
+        # Run auto-orient command
+        cmd = [convert_cmd, image_path, '-auto-orient', temp_path]
+        result = subprocess.run(cmd, capture_output=True, text=True, check=True)
+        
+        print(f"Normalized image orientation: {image_path} -> {temp_path}")
+        return temp_path
+        
+    except subprocess.CalledProcessError as e:
+        # Clean up temp file on error
+        os.unlink(temp_path)
+        raise RuntimeError(f"Failed to normalize image orientation: {e.stderr}")
+
+
+def process_image_background(image_path: str, use_external: bool = False, output_file: str = "output.svg", copy_to_svg_dir: bool = False, normalize_orientation: bool = True) -> str:
     """Convert image to base64 encoded format or return path for external reference."""
 
     print(f"Processing image: {image_path}")
-
-    if use_external:
-        if copy_to_svg_dir:
-            # Copy image to SVG directory and use filename only
-            return copy_image_to_svg_dir(image_path, output_file)
-        else:
-            # Calculate relative path from output SVG to image file
-            output_dir = Path(output_file).parent.resolve()
-            image_path_abs = Path(image_path).resolve()
-            
-            try:
-                # Try to create a relative path
-                relative_path = os.path.relpath(image_path_abs, output_dir)
-                print(f"Using relative path: {relative_path}")
-                return relative_path
-            except ValueError:
-                # If relative path fails (different drives on Windows), use absolute path
-                print(f"Cannot create relative path, using absolute: {image_path_abs}")
-                return str(image_path_abs)
+    
+    # Normalize orientation if requested
+    working_image_path = image_path
+    temp_file_to_cleanup = None
+    
+    if normalize_orientation:
+        try:
+            working_image_path = normalize_image_orientation(image_path)
+            temp_file_to_cleanup = working_image_path
+            print(f"Image orientation normalized")
+        except RuntimeError as e:
+            print(f"Warning: Could not normalize orientation: {e}")
+            print("Proceeding with original image...")
+            working_image_path = image_path
 
     try:
-        with Image.open(image_path) as img:
-            # Convert to RGB if necessary
-            if img.mode != 'RGB':
-                img = img.convert('RGB')
+        if use_external:
+            if copy_to_svg_dir:
+                # Copy image to SVG directory and use filename only
+                result = copy_image_to_svg_dir(working_image_path, output_file)
+            else:
+                # Calculate relative path from output SVG to image file
+                output_dir = Path(output_file).parent.resolve()
+                image_path_abs = Path(working_image_path).resolve()
+                
+                try:
+                    # Try to create a relative path
+                    relative_path = os.path.relpath(image_path_abs, output_dir)
+                    print(f"Using relative path: {relative_path}")
+                    result = relative_path
+                except ValueError:
+                    # If relative path fails (different drives on Windows), use absolute path
+                    print(f"Cannot create relative path, using absolute: {image_path_abs}")
+                    result = str(image_path_abs)
+        else:
+            # Convert to base64
+            try:
+                with Image.open(working_image_path) as img:
+                    # Convert to RGB if necessary
+                    if img.mode != 'RGB':
+                        img = img.convert('RGB')
+                    
+                    # Save to bytes
+                    import io
+                    img_bytes = io.BytesIO()
+                    img.save(img_bytes, format='PNG')
+                    img_bytes.seek(0)
+                    
+                    result = base64.b64encode(img_bytes.read()).decode('utf-8')
             
-            # Save to bytes
-            import io
-            img_bytes = io.BytesIO()
-            img.save(img_bytes, format='PNG')
-            img_bytes.seek(0)
-            
-            return base64.b64encode(img_bytes.read()).decode('utf-8')
-    
-    except Exception as e:
-        raise RuntimeError(f"Error processing image: {e}")
+            except Exception as e:
+                raise RuntimeError(f"Error processing image: {e}")
+        
+        return result
+        
+    finally:
+        # Clean up temporary file if created
+        if temp_file_to_cleanup and temp_file_to_cleanup != image_path:
+            try:
+                os.unlink(temp_file_to_cleanup)
+                print(f"Cleaned up temporary file: {temp_file_to_cleanup}")
+            except OSError:
+                pass  # File might already be deleted
 
 
 def calculate_text_dimensions(text: str, font: ImageFont.FreeTypeFont) -> Tuple[int, int]:
@@ -247,6 +325,8 @@ def main():
                        help="Use external file references instead of embedding images as base64")
     parser.add_argument("--copy-images", action="store_true",
                        help="Copy image files to SVG directory for better compatibility (use with --external-images)")
+    parser.add_argument("--no-normalize-orientation", action="store_true",
+                       help="Skip automatic image orientation normalization (EXIF auto-orient)")
     
     args = parser.parse_args()
     
@@ -269,8 +349,10 @@ def main():
                 background_element = create_background_element(background_data, is_pdf=True, 
                                                              use_external=args.external_images)
             else:
+                normalize_orientation = not args.no_normalize_orientation
                 background_data = process_image_background(args.background_file, args.external_images, 
-                                                         args.output_file, args.copy_images)
+                                                         args.output_file, args.copy_images, 
+                                                         normalize_orientation)
                 background_element = create_background_element(background_data, is_pdf=False, 
                                                              use_external=args.external_images)
         
