@@ -39,6 +39,7 @@ FONTS = [
 
 FONT_SIZE = 16
 RECTANGLE_COLOR = "#FFFFFF"
+RECTANGLE_OPACITY = 0.9
 TEXT_COLOR = "#000000"
 TEXT_PADDING = 5
 LINE_SPACING = 27
@@ -289,7 +290,7 @@ def create_text_line_elements(
 
     return f"""<g>
     <rect x="{rect_x}" y="{rect_y}" width="{rect_width}" height="{rect_height}" 
-          fill="{RECTANGLE_COLOR}" stroke="none"/>
+          fill="{RECTANGLE_COLOR}" stroke="none" opacity="{RECTANGLE_OPACITY}"/>
     <text x="{text_x}" y="{text_y}" font-family="{font_name}" font-size="{FONT_SIZE}" 
           fill="{TEXT_COLOR}" dominant-baseline="central" text-anchor="start">{xml.sax.saxutils.escape(text)}</text>
 </g>"""
