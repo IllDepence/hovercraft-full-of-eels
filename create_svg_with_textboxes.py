@@ -47,6 +47,7 @@ LINE_SPACING = 27
 
 def load_font_with_fallbacks() -> Tuple[ImageFont.FreeTypeFont, str]:
     """Load font with graceful fallbacks for better compatibility."""
+    print("\n=== Loading Font ===")
     primary_font_found = False
 
     # Try each font in the fallback chain
@@ -121,6 +122,7 @@ def process_pdf_background(
     output_file: str = "output.svg",
 ) -> str:
     """Extract a page from PDF and save as external PNG file."""
+    print("\n=== Pre-processing PDF ===")
     try:
         doc = fitz.open(pdf_path)
         if page_number >= len(doc):
@@ -162,6 +164,7 @@ def normalize_image_orientation(image_path: str) -> str:
     Raises:
         RuntimeError: If ImageMagick is not available or command fails
     """
+    print("\n=== Normalizing Image Orientation ===")
     # Check if ImageMagick is available
     try:
         result = subprocess.run(
@@ -209,6 +212,7 @@ def process_image_background(
 ) -> str:
     """Process image and copy to SVG directory for external reference."""
 
+    print("\n=== Pre-processing Image ===")
     print(f"Processing image: {image_path}")
 
     # Normalize orientation if requested
@@ -403,6 +407,7 @@ def main():
         with open(args.output_file, "w", encoding="utf-8") as f:
             f.write(svg_content)
 
+        print("\n=== Generating SVG ===")
         print(f"SVG generated successfully: {args.output_file}")
         if args.background_file:
             print(
