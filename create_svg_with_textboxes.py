@@ -356,19 +356,18 @@ def main():
     parser = argparse.ArgumentParser(
         description="Generate A4-sized SVG from text file with external image references"
     )
-    parser.add_argument("--text-file", required=True, help="Path to input text file")
-    parser.add_argument("--background-file", help="Path to background image or PDF")
+    parser.add_argument("--txt", required=True, help="Path to input text file")
+    parser.add_argument("--doc", help="Path to background image or PDF")
     parser.add_argument(
-        "--page-number",
-        type=int,
+        "--page",
         default=0,
         help="Page number for PDF background (0-indexed)",
     )
     parser.add_argument(
-        "--output-file", default="output.svg", help="Output SVG filename"
+        "--out", default="output.svg", help="Output SVG filename"
     )
     parser.add_argument(
-        "--no-normalize-orientation",
+        "--no-rotate",
         action="store_true",
         help="Skip automatic image orientation normalization (EXIF auto-orient)",
     )
@@ -377,26 +376,26 @@ def main():
 
     try:
         # Validate input files
-        validate_files(args.text_file, args.background_file)
+        validate_files(args.txt, args.doc)
 
         # Read text file
-        with open(args.text_file, "r", encoding="utf-8") as f:
+        with open(args.txt, "r", encoding="utf-8") as f:
             text_lines = f.readlines()
 
         # Process background if provided
         background_element = ""
-        if args.background_file:
-            output_dir = Path(args.output_file).parent
-            ext = Path(args.background_file).suffix.lower()
+        if args.doc:
+            output_dir = Path(args.out).parent
+            ext = Path(args.doc).suffix.lower()
             if ext == ".pdf":
                 background_data = process_pdf_background(
-                    args.background_file, args.page_number, output_dir, args.output_file
+                    args.doc, args.page, output_dir, args.out
                 )
                 background_element = create_background_element(background_data)
             else:
-                normalize_orientation = not args.no_normalize_orientation
+                normalize_orientation = not args.no_rotate
                 background_data = process_image_background(
-                    args.background_file, args.output_file, normalize_orientation
+                    args.doc, args.out, normalize_orientation
                 )
                 background_element = create_background_element(background_data)
 
@@ -404,12 +403,12 @@ def main():
         svg_content = generate_svg(text_lines, background_element)
 
         # Write output
-        with open(args.output_file, "w", encoding="utf-8") as f:
+        with open(args.out, "w", encoding="utf-8") as f:
             f.write(svg_content)
 
         print("\n=== Generating SVG ===")
-        print(f"SVG generated successfully: {args.output_file}")
-        if args.background_file:
+        print(f"SVG generated successfully: {args.out}")
+        if args.doc:
             print(
                 "Note: SVG uses external image references with Inkscape compatibility features."
             )
