@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 """
-SVG Generator Script
+Generates an A4-sized SVG based on a text file with strings and a background that can
+be provided as and image or page from a PDF.
 
-Generates an A4-sized SVG graphic from a text file. Each line of text is displayed
-on top of a pale yellow colored rectangle. Supports using a page from a PDF or an
-image file as a background for the entire graphic. Always uses external file references
-and copies images to the SVG directory for better compatibility.
+Puts each text line on top of a white, semi-transparent rectangle.
+Always uses external file references and copies images to the output directory to deal
+with Inkscape compatibility issues.
 """
 
 import argparse
