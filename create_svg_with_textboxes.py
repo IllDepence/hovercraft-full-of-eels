@@ -26,10 +26,7 @@ A4_WIDTH_MM = 210
 A4_HEIGHT_MM = 297
 A4_WIDTH_PX = int(A4_WIDTH_MM * 3.779527559)  # Convert mm to pixels (96 DPI)
 A4_HEIGHT_PX = int(A4_HEIGHT_MM * 3.779527559)
-FONT_PATH = "/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc"
-
-# Font fallback chain in order of preference
-FONT_FALLBACKS = [
+FONTS = [
     # Primary choice - Noto Sans CJK
     ("NotoSansCJK-Regular.ttc", "Noto Sans CJK JP Regular"),
     # Good Japanese font commonly available on macOS
@@ -41,10 +38,10 @@ FONT_FALLBACKS = [
 ]
 
 FONT_SIZE = 16
-RECTANGLE_COLOR = "#FFFACD"  # Pale yellow
-TEXT_COLOR = "#000000"  # Black
+RECTANGLE_COLOR = "#FFFFFF"
+TEXT_COLOR = "#000000"
 TEXT_PADDING = 5
-LINE_SPACING = 25
+LINE_SPACING = 27
 
 
 def load_font_with_fallbacks() -> Tuple[ImageFont.FreeTypeFont, str]:
@@ -52,17 +49,7 @@ def load_font_with_fallbacks() -> Tuple[ImageFont.FreeTypeFont, str]:
     primary_font_found = False
 
     # Try each font in the fallback chain
-    for font_file, svg_name in FONT_FALLBACKS:
-        # For the primary font (Noto Sans CJK), try the original path first
-        if font_file == "NotoSansCJK-Regular.ttc":
-            if os.path.exists(FONT_PATH):
-                try:
-                    font = ImageFont.truetype(FONT_PATH, FONT_SIZE)
-                    primary_font_found = True
-                    return font, svg_name
-                except OSError:
-                    pass
-
+    for font_file, svg_name in FONTS:
         # Search in common font directories
         search_paths = [
             "/usr/share/fonts",
@@ -85,11 +72,10 @@ def load_font_with_fallbacks() -> Tuple[ImageFont.FreeTypeFont, str]:
                         try:
                             font = ImageFont.truetype(full_path, FONT_SIZE)
 
-                            # Issue warning if we're not using the primary font
-                            if (
-                                not primary_font_found
-                                and font_file != "NotoSansCJK-Regular.ttc"
-                            ):
+                            if font_file == FONTS[0][0]:
+                                primary_font_found = True
+                                print(f"Using primary font: {svg_name} ({full_path})")
+                            else:
                                 print(
                                     f"Warning: Primary font 'Noto Sans CJK JP Regular' not found."
                                 )
@@ -280,7 +266,7 @@ def create_text_line_elements(
     text: str,
     y_position: int,
     font: ImageFont.FreeTypeFont,
-    font_name: str = "Noto Sans CJK JP Regular",
+    font_name: str = FONTS[0][1],
 ) -> str:
     """Create SVG elements for a single line of text with its background rectangle."""
     if not text.strip():  # Handle empty lines
