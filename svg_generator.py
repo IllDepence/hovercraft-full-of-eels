@@ -203,7 +203,7 @@ def create_text_line_elements(text: str, y_position: int, font: ImageFont.FreeTy
     return f'''<g>
     <rect x="{rect_x}" y="{rect_y}" width="{rect_width}" height="{rect_height}" 
           fill="{RECTANGLE_COLOR}" stroke="none"/>
-    <text x="{text_x}" y="{text_y}" font-family="Noto Sans CJK JP" font-size="{FONT_SIZE}" 
+    <text x="{text_x}" y="{text_y}" font-family="Noto Sans CJK JP Regular" font-size="{FONT_SIZE}" 
           fill="{TEXT_COLOR}" dominant-baseline="central" text-anchor="start">{xml.sax.saxutils.escape(text)}</text>
 </g>'''
 
