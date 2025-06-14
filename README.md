@@ -35,7 +35,7 @@ $ python eels.py \
 
 ## Dependencies
 
-### Systen
+### System
 
 ImageMagick
 
