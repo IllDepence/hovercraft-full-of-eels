@@ -1,4 +1,4 @@
-# Hovercraft Full of Eels
+# Hovercraft Full of Eels 🛸🐍📄🇯🇵
 
 Python script to aid translation of scanned documents into Japanese.
 
