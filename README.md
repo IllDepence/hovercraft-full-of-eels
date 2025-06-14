@@ -7,6 +7,8 @@ Generates an A4-sized SVG in which it places
 * text lines with white, semi-transparent background rectangles
 * an image or page from a PDF as background
 
+( ⚠ Code is almost exclusively written by claude-4-sonnet. )
+
 ## Usage
 
 ```bash
