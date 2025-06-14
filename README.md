@@ -23,7 +23,7 @@ $ python eels.py \
 1. Get original document text content
     * Example: `$ ocrmypdf -l eng+deu --sidecar ocr.txt scan.jpg ocr.pdf`
 2. Translate text
-    * ocr.txt -> ocr_ja.txt
+    * `ocr.txt` -> `ocr_ja.txt`
 3. Generate SVG
     * `$ python eels.py --txt ocr_ja.txt --doc scan.jpg --out eels.svg`
 4. Position/scale/adjust textboxes
