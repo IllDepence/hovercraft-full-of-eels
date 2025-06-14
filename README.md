@@ -1,6 +1,7 @@
 # Hovercraft Full of Eels
 
 Python script to aid translation of scanned documents into Japanese.
+
 Generates an A4-sized SVG in which it places
 
 * text lines with white, semi-transparent background rectangles
